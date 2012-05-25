@@ -3,6 +3,13 @@
 // kevindconley@gmail.com
 // http://kevintechnology.com
 
+//version III: Only pick up a fruit if it is possible to win or tie that fruit type
+
+//version II: Takes into account whether going after a fruit is not worthwhile.
+
+//version I: Maximimizes value for each cardinal direction based on 
+//          number of abundant and rare fruits and distance to those fruit.
+
 // Some parts shamelessly ripped from scribd's SimpleBot.
 var directions = [NORTH, SOUTH, EAST, WEST];
 var prevx;
@@ -32,15 +39,15 @@ var kconBot = {
   		theirs[i] = get_opponent_item_count(i);
   		available[i] = total[i] - mine[i] - theirs[i];
   		
-      trace("item " + i + " - total: " + total[i] + " available: " + available[i]);
+      //trace("item " + i + " - total: " + total[i] + " available: " + available[i]);
 
       // we only care if num items available is more than what opponent has 
-  		if ((available[i] >= abund && (mine[i] <= theirs[i]) && (available[i] + mine[i] > theirs[i]))) { // || abund_item == -1) {
+  		if ((available[i] >= abund && (mine[i] <= theirs[i]))) { // || abund_item == -1) {
   		  abund = available[i];
         abund_item = i;
       }
   	 
-  		if ((total[i] <= rare && (mine[i] <= theirs[i]) && (available[i] + mine[i] > theirs[i])) || rare_item == -1) {
+  		if ((total[i] <= rare && (mine[i] <= theirs[i])) || rare_item == -1) {
   			if (available[i] > 0) {
           rare = total[i];
           rare_item = i;
@@ -48,12 +55,13 @@ var kconBot = {
       }
   	}
 
-    trace("abundant: " + abund_item + " rare: " + rare_item);
+    //trace("abundant: " + abund_item + " rare: " + rare_item);
 
     // we're on an item, but should we take it?
     var spot_value = kconBot.board[get_my_x()][get_my_y()];
     if (has_item(spot_value)) {
-      if (spot_value == abund_item || spot_value == rare_item)
+      //if (spot_value == abund_item || spot_value == rare_item)
+      if (available[spot_value] + mine[spot_value] >= theirs[spot_value])  
         return TAKE;
     }
 
@@ -88,10 +96,11 @@ var kconBot = {
       // slightly less value for things further away
       if (result != false) {
         if (i == abund_item)
-          dirs[result[0]] += 2 + (1 / result[1]);
-        if (i == rare_item) 
-          dirs[result[0]] += 3 + (1 / result[1]); // slightly more value for a rare item
-        //dirs[result[0]] += 1 + (1 / result[1]);
+          dirs[result[0]] += 1 + (1 / result[1]); //2
+        if (i == rare_item && (available[i] + mine[i] > theirs[i])) 
+          dirs[result[0]] += 2 + (1 / result[1]); // slightly more value for a rare item //3
+        if (available[i] + mine[i] > theirs[i])
+          dirs[result[0]] += (1 / result[1]);
       }
     }
 
@@ -100,7 +109,7 @@ var kconBot = {
     var max_direction = PASS;
     //var alternate = EAST;
     for (d in directions) {
-      trace("direction: " + directions[d] + " result: " + dirs[directions[d]]);
+      //trace("direction: " + directions[d] + " result: " + dirs[directions[d]]);
       if(dirs[directions[d]] >= max) {
         max = dirs[directions[d]];
         //alternate = max_direction;
@@ -110,12 +119,12 @@ var kconBot = {
 
     //trace("max direction: " + max_direction);
     var potentialMove = kconBot.getCoordinatesFromDirection(max_direction);
-    trace("newx: " + potentialMove[0] + " newy: " + potentialMove[1]);
-    trace("oldx: " + prevx + " oldy: " + prevy);
+    //trace("newx: " + potentialMove[0] + " newy: " + potentialMove[1]);
+    //trace("oldx: " + prevx + " oldy: " + prevy);
     // use alternate if we visited this spot last turn (prevent oscillating)
     // ignore if we're one away from the edge (it's okay to back off an edge the same way we came)
     if (prevx == potentialMove[0] && prevy == potentialMove[1] && prevx != 1 && prevx != WIDTH - 2 && prevy != 1 && prevy != HEIGHT - 2) {
-      trace("altx: " + potentialMove[0] + " alty: " + potentialMove[1]);
+      //trace("altx: " + potentialMove[0] + " alty: " + potentialMove[1]);
       prevx = get_my_x();
       prevy = get_my_y();
       //return alternate;
